@@ -1,0 +1,290 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <iostream>
+#include <chrono>
+#include <ctime>
+#include <string>
+#include <stdexcept>
+#include <limits>
+#define MAX_RECORDS 1000
+using namespace std;
+
+typedef struct {
+    int id;
+    char date[20];//记录日期
+    char type[20];//收入或是支出
+    double money;//金额
+    char category[100];//类别
+    char remark[100];//备注
+} Record;
+
+// 全局变量
+Record records[MAX_RECORDS];
+int RecordCount = 0;
+
+//菜单
+void displayMenu() {
+    printf("使用记账系统\n");
+    printf("1. 添加记录\n");
+    printf("2. 查看记录\n");
+    printf("3. 统计与分析\n");
+    printf("4. 保存数据到文件\n");
+    printf("5. 退出\n");
+}
+
+//获取当前日期
+class DateUtils {
+public:
+    static string getTodayDate(const std::string& format = "%Y-%m-%d") {
+        try {
+            auto now = std::chrono::system_clock::now();
+            std::time_t current_time = std::chrono::system_clock::to_time_t(now);
+
+            char buffer[80];
+            if (std::strftime(buffer, sizeof(buffer), format.c_str(),
+                std::localtime(&current_time)) == 0) {
+                throw std::runtime_error("日期格式无效");
+            }
+
+            return std::string(buffer);
+        }
+        catch (const std::exception& e) {
+            std::cerr << "错误: " << e.what() << std::endl;
+            return "0000-00-00";
+        }
+    }
+
+    static bool isValidDate(int year, int month, int day) {
+        if (year < 1900 || month < 1 || month > 12 || day < 1) return false;
+        int daysInMonth[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+        if (month == 2 && isLeapYear(year)) {
+            return day <= 29;
+        }
+        return day <= daysInMonth[month - 1];
+    }
+
+private:
+    static bool isLeapYear(int year) {
+        return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+    }
+};
+
+// 输入验证函数
+int getIntInput(const string& prompt) {
+    int value;
+    while (true) {
+        cout << prompt;
+        if (cin >> value) {
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            return value;
+        }
+        else {
+            cout << "输入无效，请输入数字!" << endl;
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        }
+    }
+}
+
+double getDoubleInput(const string& prompt) {
+    double value;
+    while (true) {
+        cout << prompt;
+        if (cin >> value) {
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            return value;
+        }
+        else {
+            cout << "输入无效，请输入数字!" << endl;
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        }
+    }
+}
+
+void getStringInput(const string& prompt, char* buffer, int bufferSize) {
+    cout << prompt;
+    cin.getline(buffer, bufferSize);
+
+    // 如果输入为空，重新输入
+    while (strlen(buffer) == 0) {
+        cout << "输入不能为空，请重新输入: ";
+        cin.getline(buffer, bufferSize);
+    }
+}
+
+//添加记录
+void addRecord() {
+    if (RecordCount >= MAX_RECORDS) {
+        cout << "记录已满，无法添加新记录" << endl;
+        return;
+    }
+
+    Record newRecord;
+    newRecord.id = rand() % 10000 + 1000; // 生成更合理的ID
+
+    // 获取当前日期
+    string today = DateUtils::getTodayDate();
+    strcpy(newRecord.date, today.c_str());
+
+    // 输入类型验证
+    while (true) {
+        getStringInput("请输入类型 (income/expense): ", newRecord.type, sizeof(newRecord.type));
+        if (strcmp(newRecord.type, "income") == 0 || strcmp(newRecord.type, "expense") == 0) {
+            break;
+        }
+        else {
+            cout << "类型无效，请输入 'income' 或 'expense'" << endl;
+        }
+    }
+
+    newRecord.money = getDoubleInput("请输入金额: ");
+
+    getStringInput("请输入类别: ", newRecord.category, sizeof(newRecord.category));
+    getStringInput("请输入备注: ", newRecord.remark, sizeof(newRecord.remark));
+
+    // 添加到记录数组
+    records[RecordCount] = newRecord;
+    RecordCount++;
+
+    cout << "记录添加成功! ID: " << newRecord.id << endl;
+}
+
+//查看记录
+void viewRecord() {
+    if (RecordCount == 0) {
+        cout << "无记录" << endl;
+        return;
+    }
+    cout << "\n=== 所有财务记录 ===" << endl;
+    printf("ID\t日期\t\t类型\t\t金额\t\t类别\t\t备注\n");
+    printf("----------------------------------------------------------------------------\n");
+
+    for (int i = 0; i < RecordCount; i++) {
+        printf("%d\t%s\t%s\t\t%.2f\t\t%s\t\t%s\n",
+            records[i].id,
+            records[i].date,
+            records[i].type,
+            records[i].money,
+            records[i].category,
+            records[i].remark);
+    }
+}
+
+//统计与分析
+void analyzeRecord() {
+    if (RecordCount == 0) {
+        cout << "无记录" << endl;
+        return;
+    }
+
+    double Income = 0, Expense = 0;
+    for (int i = 0; i < RecordCount; i++) {
+        if (strcmp(records[i].type, "income") == 0) {
+            Income += records[i].money;
+        }
+        else if (strcmp(records[i].type, "expense") == 0) {
+            Expense += records[i].money;
+        }
+    }
+
+    cout << "\n=== 财务统计 ===" << endl;
+    cout << "总收入: " << Income << endl;
+    cout << "总支出: " << Expense << endl;
+    cout << "当前余额: " << (Income - Expense) << endl;
+}
+
+//保存数据到文件
+void saveRecords() {
+    FILE* file = fopen("records.txt", "w");
+    if (file == NULL) {
+        cout << "无法打开文件" << endl;
+        return;
+    }
+
+    for (int i = 0; i < RecordCount; i++) {
+        fprintf(file, "%d;%s;%s;%.2f;%s;%s\n",
+            records[i].id,
+            records[i].date,
+            records[i].type,
+            records[i].money,
+            records[i].category,
+            records[i].remark);
+    }
+
+    fclose(file);
+    cout << "数据保存成功! 共保存 " << RecordCount << " 条记录" << endl;
+}
+
+//从文件加载数据
+void loadRecords() {
+    FILE* file = fopen("records.txt", "r");
+    if (file == NULL) {
+        cout << "文件不存在或无法打开，将创建新文件" << endl;
+        return;
+    }
+
+    RecordCount = 0;
+    char line[512];
+
+    cout << "正在加载数据..." << endl;
+
+    while (fgets(line, sizeof(line), file) && RecordCount < MAX_RECORDS) {
+        Record record;
+
+        int result = sscanf(line, "%d;%19[^;];%19[^;];%lf;%99[^;];%99[^\n]",
+            &record.id,
+            record.date,
+            record.type,
+            &record.money,
+            record.category,
+            record.remark);
+
+        if (result == 6) {
+            records[RecordCount] = record;
+            RecordCount++;
+        }
+    }
+
+    fclose(file);
+    cout << "数据加载完成! 共加载 " << RecordCount << " 条记录" << endl;
+}
+
+//主函数
+int main() {
+    srand(time(NULL)); // 初始化随机数种子
+    loadRecords(); // 程序启动时加载数据
+
+    int choice;
+    do {
+        displayMenu();
+        choice = getIntInput("请选择操作 (1-5): ");
+
+        switch (choice) {
+        case 1:
+            addRecord();
+            break;
+        case 2:
+            viewRecord();
+            break;
+        case 3:
+            analyzeRecord();
+            break;
+        case 4:
+            saveRecords();
+            break;
+        case 5:
+            saveRecords();
+            cout << "感谢使用财务管理应用!" << endl;
+            break;
+        default:
+            cout << "无效选择，请重新输入!" << endl;
+        }
+        cout << endl;
+    } while (choice != 5);
+
+    return 0;
+}
