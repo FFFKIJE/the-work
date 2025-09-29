@@ -1,3 +1,4 @@
+提供个人记账，保存，查看，分析的功能
 ![d05f364a78d9f872206eaf48d302886](https://github.com/user-attachments/assets/435cf082-fe1a-49ff-b898-59f9467df7ae)
 <img width="2560" height="1600" alt="屏幕截图 2025-09-28 192235" src="https://github.com/user-attachments/assets/481b668c-7337-4a00-8da8-dbae433a3e99" />
 ![b436a1aa1db6114a444569bf37093da](https://github.com/user-attachments/assets/b659d3ed-a55a-4dde-a187-33a5852ddae8)
